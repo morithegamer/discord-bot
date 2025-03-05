@@ -18,15 +18,16 @@ openai_version = pkg_resources.get_distribution("openai").version
 # Use correct OpenAI setup based on version
 if openai_version.startswith("0."):
     openai.api_key = OPENAI_API_KEY
-    def generate_chat_response(prompt):
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",  # ✅ FORCE GPT-4
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response["choices"][0]["message"]["content"]
-        except openai.error.InvalidRequestError:
-            return "⚠️ Error: Your API key might not have GPT-4 access. Check your OpenAI account."
+def generate_chat_response(prompt):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",  # ✅ Force GPT-4
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response["choices"][0]["message"]["content"]
+    except openai.error.InvalidRequestError:
+        return "⚠️ Error: Your API key might not have GPT-4 access."
+
 else:
     from openai import OpenAI
     client = OpenAI(api_key=OPENAI_API_KEY)
