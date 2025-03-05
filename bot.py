@@ -11,21 +11,25 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# ✅ Set up OpenAI API client
+# ✅ Set OpenAI API key
 openai.api_key = OPENAI_API_KEY
 
+# ✅ Force GPT-4o & Fix Error Handling
 def generate_chat_response(prompt):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4o",  # ✅ NOW USING GPT-4o
+            model="gpt-4o",  # ✅ Now using GPT-4o
             messages=[{"role": "user", "content": prompt}]
         )
         return response["choices"][0]["message"]["content"]
-    except openai.error.InvalidRequestError:
-        return "⚠️ Error: Your API key might not have GPT-4o access. Check your OpenAI account."
-    except Exception as e:
+    
+    except openai.OpenAIError as e:  # ✅ Fixed OpenAI error handling
         print(f"⚠️ OpenAI API Error: {e}")
-        return "⚠️ An error occurred while processing the request."
+        return "⚠️ Error: OpenAI API is not responding. Check logs for details."
+    
+    except Exception as e:
+        print(f"⚠️ General Error: {e}")
+        return "⚠️ An unexpected error occurred."
 
 # Set up Discord bot
 intents = discord.Intents.default()
