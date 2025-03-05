@@ -52,5 +52,5 @@ This project is licensed under the MIT License – feel free to modify and use i
 Want to improve this bot? Fork the repo, make changes, and submit a pull request!
 
 🔗 Contact
-Created by @YourUsername
+Created by @morithegamer
 Feel free to contribute, report issues, or suggest features!
