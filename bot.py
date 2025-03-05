@@ -1,6 +1,5 @@
 import discord
 import os
-import asyncio
 import openai
 from dotenv import load_dotenv
 from badword_shutdown import check_bad_words
@@ -11,22 +10,22 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# ✅ Set OpenAI API key
-openai.api_key = OPENAI_API_KEY
+# ✅ Set OpenAI API key (No more version checks)
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-# ✅ Force GPT-4o & Fix Error Handling
+# ✅ Force GPT-4o
 def generate_chat_response(prompt):
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o",  # ✅ Now using GPT-4o
+        response = client.chat.completions.create(
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}]
         )
-        return response["choices"][0]["message"]["content"]
-    
-    except openai.OpenAIError as e:  # ✅ Fixed OpenAI error handling
+        return response.choices[0].message.content
+
+    except openai.OpenAIError as e:
         print(f"⚠️ OpenAI API Error: {e}")
         return "⚠️ Error: OpenAI API is not responding. Check logs for details."
-    
+
     except Exception as e:
         print(f"⚠️ General Error: {e}")
         return "⚠️ An unexpected error occurred."
