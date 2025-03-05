@@ -11,37 +11,21 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Check OpenAI version
-import pkg_resources
-openai_version = pkg_resources.get_distribution("openai").version
+# ✅ Set up OpenAI API client
+openai.api_key = OPENAI_API_KEY
 
-# Use correct OpenAI setup based on version
-if openai_version.startswith("0."):
-    openai.api_key = OPENAI_API_KEY
 def generate_chat_response(prompt):
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",  # ✅ Force GPT-4
+            model="gpt-4o",  # ✅ NOW USING GPT-4o
             messages=[{"role": "user", "content": prompt}]
         )
         return response["choices"][0]["message"]["content"]
     except openai.error.InvalidRequestError:
-        return "⚠️ Error: Your API key might not have GPT-4 access."
-
-else:
-    from openai import OpenAI
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    
-    def generate_chat_response(prompt):
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o",  # ✅ Switch to GPT-4o
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response["choices"][0]["message"]["content"]
-    except openai.error.InvalidRequestError:
-        return "⚠️ Error: Your API key might not have GPT-4o access."
-
+        return "⚠️ Error: Your API key might not have GPT-4o access. Check your OpenAI account."
+    except Exception as e:
+        print(f"⚠️ OpenAI API Error: {e}")
+        return "⚠️ An error occurred while processing the request."
 
 # Set up Discord bot
 intents = discord.Intents.default()
