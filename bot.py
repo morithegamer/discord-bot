@@ -3,6 +3,7 @@ import os
 import openai
 from dotenv import load_dotenv
 from badword_shutdown import check_bad_words
+import keep_alive  # ✅ Import the keep-alive script
 
 # Load environment variables
 load_dotenv()
@@ -29,6 +30,9 @@ def generate_chat_response(prompt):
     except Exception as e:
         print(f"⚠️ General Error: {e}")
         return "⚠️ An unexpected error occurred."
+
+# ✅ Start the web server to keep Railway alive
+keep_alive.keep_alive()
 
 # Set up Discord bot
 intents = discord.Intents.default()
