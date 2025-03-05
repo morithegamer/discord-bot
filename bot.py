@@ -33,14 +33,15 @@ else:
     client = OpenAI(api_key=OPENAI_API_KEY)
     
     def generate_chat_response(prompt):
-        try:
-            response = client.chat.completions.create(
-                model="gpt-4",  # ✅ FORCE GPT-4
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return response.choices[0].message.content
-        except openai.error.InvalidRequestError:
-            return "⚠️ Error: Your API key might not have GPT-4 access. Check your OpenAI account."
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4o",  # ✅ Switch to GPT-4o
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response["choices"][0]["message"]["content"]
+    except openai.error.InvalidRequestError:
+        return "⚠️ Error: Your API key might not have GPT-4o access."
+
 
 # Set up Discord bot
 intents = discord.Intents.default()
