@@ -48,6 +48,44 @@ async def on_message(message):
 
     is_dm = isinstance(message.channel, discord.DMChannel)
 
+    # ✅ Handle stickers as images
+    if message.stickers:
+        for sticker in message.stickers:
+            sticker_url = sticker.url  # Extract the sticker URL
+            await message.channel.send("🔍 Processing sticker...")
+
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "Describe this sticker in detail."},
+                    {"role": "user", "content": [
+                        {"type": "image_url", "image_url": {"url": sticker_url}}
+                    ]}
+                ]
+            ).choices[0].message.content
+
+            await message.channel.send(f"🎨 **Sticker Analysis:**\n{response}")
+            return  # Stop further processing
+
+    # ✅ Handle images properly
+    if message.attachments:
+        for attachment in message.attachments:
+            if "image" in attachment.content_type:
+                await message.channel.send("🔍 Processing image...")
+
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": "Describe this image or extract text if available."},
+                        {"role": "user", "content": [
+                            {"type": "image_url", "image_url": {"url": attachment.url}}
+                        ]}
+                    ]
+                ).choices[0].message.content
+
+                await message.channel.send(f"📜 **Image Analysis:**\n{response}")
+                return  # Stop further processing
+
     # ✅ Allow renaming in DMs
     if message.content.startswith("!rename") and is_dm:
         new_name = message.content[len("!rename "):].strip()
@@ -112,26 +150,6 @@ async def chat_with_ai(message, prompt):
 
             # ✅ Apply user-specific names in DMs
             bot_name = user_custom_names.get(message.author.id, "ChatGPT")
-
-            # ✅ Add personality for casual responses
-            if prompt.lower() in ["hi", "hello", "hey", "sup"]:
-                quirky_responses = [
-                    f"Yo {message.author.name}! What's up? 😎",
-                    f"Hey hey! How's life treating ya? 🌟",
-                    f"Sup {message.author.name}, need some AI wisdom? 🤖",
-                    f"Hi there! Ready to chat? 🚀"
-                ]
-                return random.choice(quirky_responses)
-
-            if prompt.lower() in ["nothing", "just chilling", "idk"]:
-                chill_responses = [
-                    "Fair enough. I'm just here, vibing in the cloud. ☁️",
-                    "Nothing? Well, I'm just over here existing. 👀",
-                    "Cool cool. Hit me up when you need something. 😌",
-                    "That's valid. Sometimes it's good to just exist. 🌿"
-                ]
-                return random.choice(chill_responses)
-
             return response.replace("ChatGPT", bot_name)
 
     except Exception as e:
