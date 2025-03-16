@@ -71,8 +71,9 @@ async def on_message(message):
     # ✅ Respond when mentioned (@ChatGPT)
     if bot.user in message.mentions:
         prompt = message.content.replace(f"<@{bot.user.id}>", "").strip()
+        
         if not prompt:
-            await message.channel.send("❌ Please provide a message after mentioning me!")
+            await message.channel.send("Hello! How can I assist you today? 😊")
             return
 
         response = await chat_with_ai(message, prompt)
@@ -89,18 +90,19 @@ async def on_message(message):
         await message.channel.send(response)
 
 async def chat_with_ai(message, prompt):
-    """Helper function to handle AI chat responses."""
+    """Helper function to handle AI chat responses with a typing effect."""
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}]
-        ).choices[0].message.content
+        async with message.channel.typing():  # ✅ Show "typing..." before replying
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": prompt}]
+            ).choices[0].message.content
 
-        response = await filter_bad_words(response)
+            response = await filter_bad_words(response)
 
-        # ✅ Apply user-specific names in DMs
-        bot_name = user_custom_names.get(message.author.id, "ChatGPT")
-        return response.replace("ChatGPT", bot_name)
+            # ✅ Apply user-specific names in DMs
+            bot_name = user_custom_names.get(message.author.id, "ChatGPT")
+            return response.replace("ChatGPT", bot_name)
 
     except Exception as e:
         print(f"⚠️ Error processing request: {e}")
