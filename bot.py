@@ -40,31 +40,23 @@ async def on_message(message):
     if message.author == bot.user:
         return  # Ignore the bot's own messages
 
-    # ✅ Handle multiple image uploads for OCR + Image Description
-    if message.attachments:
+    # ✅ Only process images if the user types "!describe"
+    if message.content.startswith("!describe") and message.attachments:
         results = []  # List to store results for each image
 
         for attachment in message.attachments:
             if attachment.content_type and "image" in attachment.content_type:
                 await message.channel.send("🔍 Processing image...")
 
-                # Download the image
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(attachment.url) as resp:
-                        if resp.status != 200:
-                            await message.channel.send("❌ Failed to download image.")
-                            return
-                        image_bytes = await resp.read()
-
                 # Send image to OpenAI Vision API
                 try:
                     response = client.chat.completions.create(
                         model="gpt-4o",
                         messages=[
-                            {"role": "system", "content": "Extract any visible text from this image. If no text is found, describe the image instead."},
+                            {"role": "system", "content": "You are an AI that analyzes images and provides descriptions or extracts text."},
                             {"role": "user", "content": [
-                                {"type": "text", "text": "Analyze this image and extract text if available. If no text is found, provide a short description of the image:"},
-                                {"type": "image_url", "image_url": attachment.url}
+                                {"type": "text", "text": "Describe the image in detail or extract any visible text."},
+                                {"type": "image_url", "image_url": {"url": attachment.url}}  # ✅ Fixed image format
                             ]}
                         ],
                         max_tokens=500
