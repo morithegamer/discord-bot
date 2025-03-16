@@ -4,3 +4,4 @@ python-dotenv
 flask
 setuptools
 openai>=1.0.0
+aiohttp
