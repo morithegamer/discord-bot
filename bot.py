@@ -67,7 +67,7 @@ async def on_message(message):
             await message.channel.send(f"🎨 **Sticker Analysis:**\n{response}")
             return  # Stop further processing
 
-    # ✅ Handle images properly
+    # ✅ Handle image attachments properly
     if message.attachments:
         for attachment in message.attachments:
             if "image" in attachment.content_type:
@@ -85,6 +85,11 @@ async def on_message(message):
 
                 await message.channel.send(f"📜 **Image Analysis:**\n{response}")
                 return  # Stop further processing
+
+    # ✅ Handle Tenor/Giphy GIF links
+    if "tenor.com" in message.content or "giphy.com" in message.content:
+        await message.channel.send("🎥 Looks like you sent a GIF! Unfortunately, I can't process GIFs directly, but I can still chat about it! Tell me what's happening in the GIF! 😊")
+        return
 
     # ✅ Allow renaming in DMs
     if message.content.startswith("!rename") and is_dm:
