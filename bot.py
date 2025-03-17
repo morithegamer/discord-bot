@@ -32,8 +32,8 @@ user_custom_names = {}
 conversation_history = {}
 
 # ✅ Support Message Variables
-SUPPORT_MESSAGE = "💙 Love the bot? Help support premium features on [Patreon](https://www.patreon.com/) 🚀"
-SUPPORT_COMMAND_MESSAGE = "Want to unlock premium features? Support here: [Patreon](https://www.patreon.com/) 🚀"
+SUPPORT_MESSAGE = "💙 Love the bot? Help support premium features on [Patreon](https://www.patreon.com/c/user?u=80563219) 🚀"
+SUPPORT_COMMAND_MESSAGE = "Want to unlock premium features? Support here: [Patreon](https://www.patreon.com/c/user?u=80563219) 🚀"
 
 # ✅ Function to filter AI's responses only
 async def filter_bad_words(text):
