@@ -50,21 +50,44 @@ async def on_message(message):
     is_dm = isinstance(message.channel, discord.DMChannel)
     prompt = message.content.lower()
 
-    # ✅ Handle sticker analysis (Require Command)
-    if message.stickers and message.content.startswith("!analyze"):
-        for sticker in message.stickers:
-            sticker_url = sticker.url  # Extract the sticker URL
-            await message.channel.send("🔍 Processing sticker...")
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "Describe this sticker in detail."},
-                    {"role": "user", "content": [
-                        {"type": "image_url", "image_url": {"url": sticker_url}}
-                    ]}
-                ]
-            ).choices[0].message.content
-            await message.channel.send(f"🎨 **Sticker Analysis:**\n{response}")
+    # ✅ Allow stickers in DMs and require !analyze in servers
+    if message.stickers:
+        if is_dm:
+            for sticker in message.stickers:
+                sticker_url = sticker.url  # Extract the sticker URL
+                await message.channel.send("🔍 Processing sticker...")
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": "Describe the following sticker in detail."},
+                            {"role": "user", "content": [
+                                {"type": "image_url", "image_url": {"url": sticker_url}}
+                            ]}
+                        ]
+                    ).choices[0].message.content
+                    await message.channel.send(f"🎨 **Sticker Analysis:**\n{response}")
+                except Exception as e:
+                    print(f"⚠️ Error processing sticker: {e}")
+                    await message.channel.send("⚠️ Sorry, I couldn't analyze the sticker. Try again later!")
+        elif message.content.startswith("!analyze"):
+            for sticker in message.stickers:
+                sticker_url = sticker.url  # Extract the sticker URL
+                await message.channel.send("🔍 Processing sticker...")
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": "Describe the following sticker in detail."},
+                            {"role": "user", "content": [
+                                {"type": "image_url", "image_url": {"url": sticker_url}}
+                            ]}
+                        ]
+                    ).choices[0].message.content
+                    await message.channel.send(f"🎨 **Sticker Analysis:**\n{response}")
+                except Exception as e:
+                    print(f"⚠️ Error processing sticker: {e}")
+                    await message.channel.send("⚠️ Sorry, I couldn't analyze the sticker. Try again later!")
             return  # Stop further processing
 
     # ✅ Handle image attachments properly (Require Command)
@@ -72,16 +95,20 @@ async def on_message(message):
         for attachment in message.attachments:
             if "image" in attachment.content_type:
                 await message.channel.send("🔍 Processing image...")
-                response = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[
-                        {"role": "system", "content": "Describe this image or extract text if available."},
-                        {"role": "user", "content": [
-                            {"type": "image_url", "image_url": {"url": attachment.url}}
-                        ]}
-                    ]
-                ).choices[0].message.content
-                await message.channel.send(f"📜 **Image Analysis:**\n{response}")
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": "Describe this image or extract text if available."},
+                            {"role": "user", "content": [
+                                {"type": "image_url", "image_url": {"url": attachment.url}}
+                            ]}
+                        ]
+                    ).choices[0].message.content
+                    await message.channel.send(f"📜 **Image Analysis:**\n{response}")
+                except Exception as e:
+                    print(f"⚠️ Error processing image: {e}")
+                    await message.channel.send("⚠️ Sorry, I couldn't analyze the image. Try again later!")
                 return  # Stop further processing
 
     # ✅ Respond naturally to @mentions
@@ -113,21 +140,6 @@ async def chat_with_ai(message, prompt):
             response = await filter_bad_words(response)
             conversation_history[user_id].append({"role": "assistant", "content": response})
             bot_name = user_custom_names.get(message.author.id, "ChatGPT")
-
-            # ✅ Make responses feel more natural like Clyde
-            if prompt.lower() in ["hi", "hello", "hey", "yo", "sup"]:
-                return random.choice([
-                    f"Hey {message.author.name}! 😊",
-                    "Hello there! Need anything? 😃",
-                    "Yo! How’s your day going? 🔥",
-                    "Hey hey! What's up? 🤖"
-                ])
-            if prompt.lower() in ["nothing", "just chilling", "idk"]:
-                return random.choice([
-                    "Fair enough, just vibing here too. ☁️",
-                    "That’s valid. Sometimes it’s nice to just exist. 🌿",
-                    "No worries! If you need anything, just ask! 😊"
-                ])
             return response.replace("ChatGPT", bot_name)
     except Exception as e:
         print(f"⚠️ Error processing request: {e}")
