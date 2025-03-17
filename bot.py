@@ -4,6 +4,7 @@ import openai
 import aiohttp
 import random
 import requests
+import asyncio
 from dotenv import load_dotenv
 from badword_shutdown import check_bad_words
 import keep_alive  # ✅ Keep bot online
@@ -30,10 +31,11 @@ bot = discord.Client(intents=intents)
 # ✅ Dictionary to store user-specific names in DMs
 user_custom_names = {}
 conversation_history = {}
+cooldowns = {}
 
 # ✅ Support Message Variables
-SUPPORT_MESSAGE = "💙 Love the bot? Help support premium features on [Patreon](https://www.patreon.com/c/user?u=80563219) 🚀"
-SUPPORT_COMMAND_MESSAGE = "Want to unlock premium features? Support here: [Patreon](https://www.patreon.com/c/user?u=80563219) 🚀"
+SUPPORT_MESSAGE = "💙 Love the bot? Help support premium features on [Patreon](https://www.patreon.com/user?u=80563219) 🚀"
+SUPPORT_COMMAND_MESSAGE = "Want to unlock premium features? Support here: [Patreon](https://www.patreon.com/user?u=80563219) 🚀"
 
 # ✅ Function to filter AI's responses only
 async def filter_bad_words(text):
@@ -53,6 +55,13 @@ async def on_message(message):
 
     is_dm = isinstance(message.channel, discord.DMChannel)
     prompt = message.content.lower()
+    user_id = message.author.id
+
+    # ✅ Enforce Rate Limits (5-second cooldown per user)
+    if user_id in cooldowns and cooldowns[user_id] > asyncio.get_event_loop().time():
+        await message.channel.send("⏳ Please wait a few seconds before using the bot again.")
+        return
+    cooldowns[user_id] = asyncio.get_event_loop().time() + 5  # Set 5-second cooldown
 
     # ✅ Randomly Show Support Message (1 in 20 chance)
     if random.randint(1, 20) == 1:
@@ -128,8 +137,9 @@ async def chat_with_ai(message, prompt):
         user_id = message.author.id
         if user_id not in conversation_history:
             conversation_history[user_id] = []
+        conversation_history[user_id] = conversation_history[user_id][-10:]  # Keep last 10 messages
         conversation_history[user_id].append({"role": "user", "content": prompt})
-        async with message.channel.typing():  # ✅ Show "typing..." before replying
+        async with message.channel.typing():
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=conversation_history[user_id]
