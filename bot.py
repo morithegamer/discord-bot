@@ -31,6 +31,10 @@ bot = discord.Client(intents=intents)
 user_custom_names = {}
 conversation_history = {}
 
+# ✅ Support Message Variables
+SUPPORT_MESSAGE = "💙 Love the bot? Help support premium features on [Patreon](https://www.patreon.com/) 🚀"
+SUPPORT_COMMAND_MESSAGE = "Want to unlock premium features? Support here: [Patreon](https://www.patreon.com/) 🚀"
+
 # ✅ Function to filter AI's responses only
 async def filter_bad_words(text):
     if check_bad_words(text):
@@ -40,7 +44,7 @@ async def filter_bad_words(text):
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="@mentions | !chatgpt | !analyze"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="@mentions | !chatgpt | !analyze | !support"))
 
 @bot.event
 async def on_message(message):
@@ -49,6 +53,15 @@ async def on_message(message):
 
     is_dm = isinstance(message.channel, discord.DMChannel)
     prompt = message.content.lower()
+
+    # ✅ Randomly Show Support Message (1 in 20 chance)
+    if random.randint(1, 20) == 1:
+        await message.channel.send(SUPPORT_MESSAGE)
+
+    # ✅ Detect custom emojis
+    if any(char.startswith("<:") and char.endswith(">") for char in message.content.split()):
+        await message.channel.send("😃 I see you used a custom emoji! Looks cool! 🔥")
+        return  # Stop further processing
 
     # ✅ Allow stickers in DMs and require !analyze in servers
     if message.stickers:
@@ -90,26 +103,10 @@ async def on_message(message):
                     await message.channel.send("⚠️ Sorry, I couldn't analyze the sticker. Try again later!")
             return  # Stop further processing
 
-    # ✅ Handle image attachments properly (Require Command)
-    if message.attachments and message.content.startswith("!analyze"):
-        for attachment in message.attachments:
-            if "image" in attachment.content_type:
-                await message.channel.send("🔍 Processing image...")
-                try:
-                    response = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=[
-                            {"role": "system", "content": "Describe this image or extract text if available."},
-                            {"role": "user", "content": [
-                                {"type": "image_url", "image_url": {"url": attachment.url}}
-                            ]}
-                        ]
-                    ).choices[0].message.content
-                    await message.channel.send(f"📜 **Image Analysis:**\n{response}")
-                except Exception as e:
-                    print(f"⚠️ Error processing image: {e}")
-                    await message.channel.send("⚠️ Sorry, I couldn't analyze the image. Try again later!")
-                return  # Stop further processing
+    # ✅ Support Command
+    if message.content.startswith("!support"):
+        await message.channel.send(SUPPORT_COMMAND_MESSAGE)
+        return
 
     # ✅ Respond naturally to @mentions
     if bot.user in message.mentions:
