@@ -4,7 +4,6 @@ import openai
 import aiohttp
 import random
 import requests
-import asyncio
 from dotenv import load_dotenv
 from badword_shutdown import check_bad_words
 import keep_alive  # ✅ Keep bot online
@@ -31,47 +30,16 @@ bot = discord.Client(intents=intents)
 # ✅ Dictionary to store user-specific names in DMs
 user_custom_names = {}
 conversation_history = {}
-cooldowns = {}
 
 # ✅ Support Message Variables
-SUPPORT_MESSAGE = "💙 Love the bot? Help support premium features on [Patreon](https://www.patreon.com/user?u=80563219) 🚀"
-SUPPORT_COMMAND_MESSAGE = "Want to unlock premium features? Support here: [Patreon](https://www.patreon.com/user?u=80563219) 🚀"
+SUPPORT_MESSAGE = "💙 Love the bot? Help support premium features on [Patreon](https://www.patreon.com/c/user?u=80563219) 🚀"
+SUPPORT_COMMAND_MESSAGE = "Want to unlock premium features? Support here: [Patreon](https://www.patreon.com/c/user?u=80563219) 🚀"
 
 # ✅ Function to filter AI's responses only
 async def filter_bad_words(text):
     if check_bad_words(text):
         return "⚠️ [Message blocked due to inappropriate content]"
     return text
-
-# ✅ Categorize emojis for better responses
-emoji_responses = {
-    "happy": ["😃", "😄", "😁", "😊", "🙂", "😆"],
-    "sad": ["😢", "😭", "🥺", "😞", "😔"],
-    "angry": ["😠", "😡", "🤬"],
-    "funny": ["🤣", "😂", "😆", "😹"],
-    "cool": ["😎", "🔥", "💯"],
-    "awkward": ["🫠", "😬", "😳"],
-    "pepe": ["🐸", "🫂", "Sadge", "PepeHands"],
-}
-
-async def get_emoji_response(emoji):
-    for category, emojis in emoji_responses.items():
-        if emoji in emojis:
-            if category == "happy":
-                return random.choice(["You're spreading some good vibes! 😊", "Love the positivity! 😃"])
-            if category == "sad":
-                return random.choice(["Oh no, everything okay? 🥺", "Sending virtual hugs! 🤗"])
-            if category == "angry":
-                return random.choice(["Whoa, what's got you fired up? 😠", "Take a deep breath! 💨"])
-            if category == "funny":
-                return random.choice(["Haha, that's a good one! 🤣", "You got jokes! 😂"])
-            if category == "cool":
-                return random.choice(["Looking sharp! 😎🔥", "Absolute legend! 💯"])
-            if category == "awkward":
-                return random.choice(["Oof, that moment... 🫠", "I feel that too. 😬"])
-            if category == "pepe":
-                return random.choice(["Sadge... 🥺", "PepeHands... 💔"])
-    return "Nice emoji! 👍"
 
 @bot.event
 async def on_ready():
@@ -85,23 +53,54 @@ async def on_message(message):
 
     is_dm = isinstance(message.channel, discord.DMChannel)
     prompt = message.content.lower()
-    user_id = message.author.id
-
-    # ✅ Enforce Rate Limits (5-second cooldown per user)
-    if user_id in cooldowns and cooldowns[user_id] > asyncio.get_event_loop().time():
-        await message.channel.send("⏳ Please wait a few seconds before using the bot again.")
-        return
-    cooldowns[user_id] = asyncio.get_event_loop().time() + 5  # Set 5-second cooldown
 
     # ✅ Randomly Show Support Message (1 in 20 chance)
     if random.randint(1, 20) == 1:
         await message.channel.send(SUPPORT_MESSAGE)
 
-    # ✅ Detect and respond to emojis
-    for char in message.content:
-        response = await get_emoji_response(char)
-        if response:
-            await message.channel.send(response)
+    # ✅ Detect custom emojis
+    if any(char.startswith("<:") and char.endswith(">") for char in message.content.split()):
+        await message.channel.send("😃 I see you used a custom emoji! Looks cool! 🔥")
+        return  # Stop further processing
+
+    # ✅ Allow stickers in DMs and require !analyze in servers
+    if message.stickers:
+        if is_dm:
+            for sticker in message.stickers:
+                sticker_url = sticker.url  # Extract the sticker URL
+                await message.channel.send("🔍 Processing sticker...")
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": "Describe the following sticker in detail."},
+                            {"role": "user", "content": [
+                                {"type": "image_url", "image_url": {"url": sticker_url}}
+                            ]}
+                        ]
+                    ).choices[0].message.content
+                    await message.channel.send(f"🎨 **Sticker Analysis:**\n{response}")
+                except Exception as e:
+                    print(f"⚠️ Error processing sticker: {e}")
+                    await message.channel.send("⚠️ Sorry, I couldn't analyze the sticker. Try again later!")
+        elif message.content.startswith("!analyze"):
+            for sticker in message.stickers:
+                sticker_url = sticker.url  # Extract the sticker URL
+                await message.channel.send("🔍 Processing sticker...")
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": "Describe the following sticker in detail."},
+                            {"role": "user", "content": [
+                                {"type": "image_url", "image_url": {"url": sticker_url}}
+                            ]}
+                        ]
+                    ).choices[0].message.content
+                    await message.channel.send(f"🎨 **Sticker Analysis:**\n{response}")
+                except Exception as e:
+                    print(f"⚠️ Error processing sticker: {e}")
+                    await message.channel.send("⚠️ Sorry, I couldn't analyze the sticker. Try again later!")
             return  # Stop further processing
 
     # ✅ Support Command
@@ -129,9 +128,8 @@ async def chat_with_ai(message, prompt):
         user_id = message.author.id
         if user_id not in conversation_history:
             conversation_history[user_id] = []
-        conversation_history[user_id] = conversation_history[user_id][-10:]  # Keep last 10 messages
         conversation_history[user_id].append({"role": "user", "content": prompt})
-        async with message.channel.typing():
+        async with message.channel.typing():  # ✅ Show "typing..." before replying
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=conversation_history[user_id]
